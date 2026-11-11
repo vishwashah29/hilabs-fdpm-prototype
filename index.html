@@ -3,22 +3,183 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>HiLabs FDPM Case Prototype</title>
+<title>RosterLink prototype: verified provider roster updates (synthetic data)</title>
 <style>
-  body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:Inter,-apple-system,Segoe UI,Arial,sans-serif;background:#F6F9FF;color:#29303D}
-  .card{background:#fff;border:1.5px solid #072669;border-radius:16px;padding:40px 48px;max-width:560px;text-align:center}
-  h1{color:#072669;font-size:28px;margin:0 0 8px}
-  p{font-size:17px;line-height:1.5;margin:8px 0}
-  .tag{display:inline-block;background:#072669;color:#fff;border-radius:999px;padding:6px 16px;font-size:13px;font-weight:700;letter-spacing:1px;margin-bottom:18px}
-  .note{color:#465167;font-size:14px}
+:root{--navy:#072669;--blue:#2A6AF1;--tint:#E3ECFE;--wash:#F6F9FF;--ink:#29303D;--slate:#465167;--line:#D5DEEF;--ok:#2b8a3e;--okbg:#e6f4ea;--warn:#b26a00;--warnbg:#fff4e0;--bad:#c92a2a;--badbg:#fdecec}
+*{box-sizing:border-box}body{margin:0;font-family:Inter,-apple-system,Segoe UI,Arial,sans-serif;background:var(--wash);color:var(--ink);font-size:14px}
+header{background:var(--navy);color:#fff;padding:12px 22px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.logo{font-weight:800;font-size:18px}.logo span{color:#9DBBF8}.sub{opacity:.8;font-size:13px}.sp{flex:1}
+.syn{background:#ffd43b;color:var(--navy);font-weight:700;font-size:11px;padding:3px 8px;border-radius:4px;letter-spacing:.4px}
+nav{display:flex;gap:4px;background:#fff;border-bottom:1px solid var(--line);padding:0 22px}
+nav button{border:0;background:none;padding:12px 14px;font-size:14px;color:var(--slate);cursor:pointer;border-bottom:3px solid transparent}
+nav button.on{color:var(--navy);border-bottom-color:var(--blue);font-weight:700}
+main{max-width:1280px;margin:0 auto;padding:18px 22px}.view{display:none}.view.on{display:block}
+.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px}
+h2{margin:0 0 4px;font-size:18px;color:var(--navy)}p.s{margin:0 0 12px;color:var(--slate);font-size:13px}
+.grid{display:grid;gap:14px}.two{grid-template-columns:1.6fr 1fr}@media(max-width:950px){.two{grid-template-columns:1fr}}
+.kpis{grid-template-columns:repeat(auto-fit,minmax(180px,1fr));margin-bottom:14px}
+.k .l{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--slate)}.k .v{font-size:26px;font-weight:800;color:var(--navy);margin-top:4px}.k .d{font-size:12px;color:var(--ok)}
+table{width:100%;border-collapse:collapse;font-size:13px}th{text-align:left;font-size:12px;color:var(--slate);padding:8px;border-bottom:1.5px solid var(--navy)}td{padding:8px;border-bottom:1px solid var(--line);vertical-align:middle}
+.pill{display:inline-block;padding:2px 9px;border-radius:10px;font-size:11px;font-weight:700;white-space:nowrap}
+.ok{background:var(--okbg);color:var(--ok)}.warn{background:var(--warnbg);color:var(--warn)}.bad{background:var(--badbg);color:var(--bad)}.info{background:var(--tint);color:var(--navy)}.mute{background:#eef0f3;color:var(--slate)}
+.btn{border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 11px;font-size:12px;cursor:pointer;color:var(--ink)}.btn:hover{border-color:#aab6cc}
+.btn.p{background:var(--navy);color:#fff;border-color:var(--navy)}.btn.b{background:var(--blue);color:#fff;border-color:var(--blue)}.btn.r{color:var(--bad)}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.sb{justify-content:space-between}
+.flag{font-size:12px;color:var(--warn);margin-top:3px}
+.mono{font-family:ui-monospace,Menlo,monospace;font-size:12px}
+.check{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px dashed var(--line);font-size:13px}
+.conf{font-size:34px;font-weight:800}.bar{height:8px;background:#eef0f3;border-radius:4px;overflow:hidden;margin:6px 0 10px}.bar i{display:block;height:100%}
+.walk{background:var(--tint);border-radius:12px;padding:12px 16px;margin-bottom:14px;font-size:13px}.walk ol{margin:6px 0 0 18px;padding:0}
+.modal{position:fixed;inset:0;background:rgba(7,38,105,.35);display:none;align-items:center;justify-content:center;z-index:5}.modal.on{display:flex}
+.mbox{background:#fff;border-radius:14px;padding:20px;width:min(560px,92vw)}.mbox label{display:block;font-size:12px;color:var(--slate);margin:10px 0 4px}
+.mbox input,.mbox select{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:14px}
+.empty{color:var(--slate);padding:18px;text-align:center}
+.log div{padding:6px 0;border-bottom:1px dashed var(--line);font-size:12px}.log time{color:var(--slate);margin-right:6px}
+.toast{position:fixed;right:18px;bottom:18px;background:var(--navy);color:#fff;padding:10px 14px;border-radius:8px;opacity:0;transition:.25s;pointer-events:none}.toast.on{opacity:1}
+footer{text-align:center;color:var(--slate);font-size:12px;padding:18px}
 </style>
 </head>
 <body>
-  <div class="card">
-    <span class="tag">CASE PROTOTYPE</span>
-    <h1>Prototype coming soon</h1>
-    <p>This page will host the working prototype for the Forward Deployed Product Manager case assessment.</p>
-    <p class="note">Built by Vishwa Shah. Uses synthetic data only.</p>
+<header><div class="logo">Roster<span>Link</span></div><div class="sub">Concept for MedCare: verified roster updates from providers to plans</div><div class="sp"></div><span class="syn">Synthetic data only</span></header>
+<nav id="nav"><button data-v="provider" class="on">1 · Provider view</button><button data-v="plan">2 · Plan view</button><button data-v="how">3 · How checks work</button></nav>
+<main>
+<section class="view on" id="v-provider">
+  <div class="walk"><b>You are Priya, practice manager at Maple Grove Family Practice.</b> Your roster arrives pre-filled with what the plan holds today. Confirm what's right, fix what's wrong, add or remove doctors. Every change is checked instantly before it goes anywhere.
+    <ol><li>Click <b>Edit</b> on a flagged row, or <b>+ Add doctor</b> (try NPI 1932047581 for a clean add, or change a digit to see a failed check).</li><li>See the checks and confidence score update live on the right.</li><li>Click <b>Submit changes</b>, then open the <b>Plan view</b>.</li></ol></div>
+  <div class="grid two">
+    <div class="card">
+      <div class="row sb"><div><h2>Your roster at Summit Health Plan</h2><p class="s">Pre-filled from the plan's records and MedCare's data. Rows marked ⚠ disagree with outside sources.</p></div>
+        <div class="row"><button class="btn" id="addBtn">+ Add doctor</button><button class="btn b" id="submitBtn">Submit changes (0)</button></div></div>
+      <table><thead><tr><th>Doctor</th><th>NPI</th><th>Specialty</th><th>Location</th><th>Status</th><th></th></tr></thead><tbody id="roster"></tbody></table>
+    </div>
+    <div class="card">
+      <h2>Instant checks</h2><p class="s" id="chkFor">Select or make a change to see its checks.</p>
+      <div id="chkBody"><div class="empty">No change selected</div></div>
+    </div>
   </div>
+</section>
+<section class="view" id="v-plan">
+  <div class="grid kpis" id="kpis"></div>
+  <div class="grid two">
+    <div class="card"><h2>Incoming changes</h2><p class="s">95%+ confidence goes straight to claims and directory systems. 70 to 94% waits for an analyst. Under 70% goes back to the provider with the reason.</p>
+      <table><thead><tr><th>Change</th><th>Practice</th><th>Confidence</th><th>Status</th><th>Action</th></tr></thead><tbody id="queue"></tbody></table></div>
+    <div class="card"><h2>Audit log</h2><p class="s">Who changed what, when, and why. Ready for CMS audits.</p><div class="log" id="log"></div></div>
+  </div>
+</section>
+<section class="view" id="v-how">
+  <div class="card"><h2>How a change is verified</h2><p class="s">The provider's input is treated as a claim to check, not the truth.</p>
+  <table><thead><tr><th>Check</th><th>Source</th><th>If it fails</th></tr></thead><tbody>
+  <tr><td>NPI is valid (check digit)</td><td>NPI standard (Luhn, prefix 80840)</td><td>Blocked; provider asked to fix</td></tr>
+  <tr><td>Name matches NPI</td><td>NPPES registry (synthetic copy)</td><td>−40 confidence</td></tr>
+  <tr><td>Licence is active</td><td>State licence board (synthetic)</td><td>−40 confidence</td></tr>
+  <tr><td>Not excluded</td><td>OIG exclusion list (synthetic)</td><td>Blocked</td></tr>
+  <tr><td>Location is a known practice address</td><td>Geocoder and plan locations</td><td>−15 confidence</td></tr>
+  <tr><td>Claims activity agrees</td><td>Plan claims, last 12 months (synthetic)</td><td>−15 (e.g. "left practice" but still billing)</td></tr>
+  </tbody></table>
+  <p class="s" style="margin-top:12px">Confidence starts at 100. 95+ auto-applies, 70 to 94 goes to an analyst, below 70 returns to the provider. Terminations always need a human.</p></div>
+</section>
+</main>
+<footer>RosterLink is a case-study prototype. All practices, doctors, NPIs and plans are randomly generated synthetic data.</footer>
+<div class="modal" id="modal"><div class="mbox"><h2 id="mTitle">Edit doctor</h2>
+<label>Full name</label><input id="fName"><label>NPI (10 digits)</label><input id="fNpi" class="mono"><label>Specialty</label><select id="fSpec"></select>
+<label>Practice location</label><select id="fLoc"></select><label>Accepting new patients</label><select id="fAcc"><option>Yes</option><option>No</option></select>
+<div class="row" style="margin-top:16px;justify-content:flex-end"><button class="btn" id="mCancel">Cancel</button><button class="btn p" id="mSave">Save change</button></div></div></div>
+<div class="toast" id="toast"></div>
+<script>
+// ---- synthetic reference data ----
+function luhnDigit(nine){const s="80840"+nine;let sum=0,dbl=true;for(let i=s.length-1;i>=0;i--){let d=+s[i];if(dbl){d*=2;if(d>9)d-=9}sum+=d;dbl=!dbl}return (10-(sum%10))%10}
+const validNPI=n=>/^\d{10}$/.test(n)&&luhnDigit(n.slice(0,9))===+n[9];
+const mk=nine=>nine+luhnDigit(nine);
+const SPECS=["Family Medicine","Internal Medicine","Pediatrics","Psychiatry","Cardiology","OB/GYN"];
+const LOCS=["120 Maple Ave, Ashford","48 Harbor Blvd, Bellmont","9 Cedar Ln, Crestwood"];
+// registry: NPPES + licence + OIG + claims (synthetic)
+const REG={};
+function reg(nine,name,lic,oig,claims){const n=mk(nine);REG[n]={name,lic,oig,claims};return n}
+const D=[
+ ["193204758","Dr. Asha Northcott","Family Medicine",0,"Yes","active",false,140],
+ ["148820317","Dr. Marcus Alder","Internal Medicine",0,"Yes","active",false,96],
+ ["162755190","Dr. Elena Pemberton","Pediatrics",1,"No","active",false,210],
+ ["170331642","Dr. Ravi Whitlock","Psychiatry",1,"Yes","active",false,0],
+ ["155902864","Dr. Grace Holloway","Cardiology",2,"Yes","inactive",false,12],
+ ["181467723","Dr. Tomas Ingram","OB/GYN",0,"Yes","active",false,77],
+ ["139275048","Dr. Nadia Kettering","Family Medicine",2,"No","active",false,58]];
+const roster=D.map((d,i)=>({id:"r"+i,name:d[1],npi:reg(d[0],d[1],d[5],d[6],d[7]),spec:d[2],loc:LOCS[d[3]],acc:d[4],status:"On file"}));
+roster[3].flag="No claims in 12 months: still seeing patients here?";
+roster[4].flag="Licence shows inactive in the state registry";
+roster[2].flag="Plan lists 48 Harbor Blvd; claims show 120 Maple Ave";
+// extra registry entries for adds
+reg("193204758".replace("193","194"),"Dr. Leila Quill","active",false,0);
+const addNPI=mk("194204758"); REG[addNPI]={name:"Dr. Leila Quill",lic:"active",oig:false,claims:0};
+document.querySelector('.walk ol li').innerHTML='Click <b>Edit</b> on a flagged row, or <b>+ Add doctor</b> (try Dr. Leila Quill, NPI <span class="mono">'+addNPI+'</span>; change one digit to see a failed check).';
+const OIGNPI=mk("120000001"); REG[OIGNPI]={name:"Dr. Victor Vance",lic:"active",oig:true,claims:0};
+
+const changes=[]; const queue=[]; const log=[];
+const now=()=>new Date();
+function L(m){log.unshift({t:now(),m});renderLog()}
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('on');clearTimeout(t.h);t.h=setTimeout(()=>t.classList.remove('on'),2200)}
+
+// ---- verification engine ----
+function verify(ch){
+  const c=[];let conf=100,block=false;const r=REG[ch.npi];
+  if(!validNPI(ch.npi)){c.push(["NPI is valid","bad","Check digit fails"]);block=true;conf-=60}else c.push(["NPI is valid","ok","Passes check digit"]);
+  if(r&&r.name===ch.name)c.push(["Name matches NPI","ok","NPPES: "+r.name]);else if(r){c.push(["Name matches NPI","bad","NPPES has "+r.name]);conf-=40}else{c.push(["Name matches NPI","warn","NPI not found in registry"]);conf-=40}
+  if(r&&r.lic==="active")c.push(["Licence is active","ok","State board: active"]);else{c.push(["Licence is active","bad",r?"State board: "+r.lic:"No licence record"]);conf-=40}
+  if(r&&r.oig){c.push(["Not on OIG exclusion list","bad","Excluded"]);block=true;conf-=60}else c.push(["Not on OIG exclusion list","ok","Clear"]);
+  if(LOCS.includes(ch.loc))c.push(["Location is a known address","ok","Geocoded to practice site"]);else{c.push(["Location is a known address","warn","Address not recognised"]);conf-=15}
+  if(ch.type==="Remove"){ if(r&&r.claims>20){c.push(["Claims agree","warn",r.claims+" claims in last 12 months"]);conf-=15} else c.push(["Claims agree","ok","No recent claims"]);}
+  else if(ch.type==="Add") c.push(["Claims agree","info","New doctor: no claims yet"]);
+  else { if(r&&r.claims===0&&ch.acc==="Yes"){c.push(["Claims agree","warn","No claims in 12 months"]);conf-=15} else c.push(["Claims agree","ok",(r?r.claims:0)+" claims, consistent"]); }
+  conf=Math.max(0,Math.min(100,conf));
+  let route=block||conf<70?"Returned to provider":conf>=95&&ch.type!=="Remove"?"Auto-applied":"Needs review";
+  return {checks:c,conf,route};
+}
+function showChecks(ch){
+  const v=verify(ch);document.getElementById('chkFor').textContent=ch.type+": "+ch.name;
+  const col=v.conf>=95?"var(--ok)":v.conf>=70?"var(--warn)":"var(--bad)";
+  document.getElementById('chkBody').innerHTML=`<div class="row sb"><div><div class="conf" style="color:${col}">${v.conf}%</div><div class="s" style="color:var(--slate);font-size:12px">confidence</div></div><span class="pill ${v.route==="Auto-applied"?"ok":v.route==="Needs review"?"warn":"bad"}">${v.route==="Auto-applied"?"Will auto-apply":v.route==="Needs review"?"Analyst will review":"Fix before sending"}</span></div><div class="bar"><i style="width:${v.conf}%;background:${col}"></i></div>`+v.checks.map(c=>`<div class="check"><span>${c[0]}<br><span style="color:var(--slate);font-size:12px">${c[2]}</span></span><span class="pill ${c[1]}">${c[1]==="ok"?"Pass":c[1]==="bad"?"Fail":c[1]==="warn"?"Check":"Info"}</span></div>`).join("")+(ch.type==="Remove"?'<p class="s" style="margin-top:8px">Terminations always need a human, so this goes to an analyst.</p>':"");
+  return v;
+}
+// ---- provider view ----
+function renderRoster(){
+  document.getElementById('roster').innerHTML=roster.map(r=>`<tr><td><b>${r.name}</b>${r.flag&&r.status==="On file"?`<div class="flag">⚠ ${r.flag}</div>`:""}</td><td class="mono">${r.npi}</td><td>${r.spec}</td><td>${r.loc}<br><span style="color:var(--slate);font-size:12px">New patients: ${r.acc}</span></td><td><span class="pill ${r.status==="On file"?"mute":r.status==="Removed"?"bad":"info"}">${r.status}</span></td><td><div class="row"><button class="btn" onclick="edit('${r.id}')">Edit</button><button class="btn r" onclick="removeDoc('${r.id}')">Left</button></div></td></tr>`).join("");
+  document.getElementById('submitBtn').textContent=`Submit changes (${changes.length})`;
+}
+let editing=null;
+const M=id=>document.getElementById(id);
+M('fSpec').innerHTML=SPECS.map(s=>`<option>${s}</option>`).join("");M('fLoc').innerHTML=LOCS.map(s=>`<option>${s}</option>`).join("")+'<option>77 Unknown Rd, Nowhere</option>';
+function openModal(t,r){editing=r;M('mTitle').textContent=t;M('fName').value=r?r.name:"Dr. Leila Quill";M('fNpi').value=r?r.npi:addNPI;M('fSpec').value=r?r.spec:"Pediatrics";M('fLoc').value=r?r.loc:LOCS[0];M('fAcc').value=r?r.acc:"Yes";M('modal').classList.add('on');preview()}
+function preview(){const ch={type:editing?"Update":"Add",name:M('fName').value.trim(),npi:M('fNpi').value.trim(),spec:M('fSpec').value,loc:M('fLoc').value,acc:M('fAcc').value};showChecks(ch)}
+['fName','fNpi','fSpec','fLoc','fAcc'].forEach(i=>M(i).addEventListener('input',preview));
+window.edit=id=>openModal("Edit doctor",roster.find(r=>r.id===id));
+M('addBtn').onclick=()=>openModal("Add doctor",null);
+M('mCancel').onclick=()=>M('modal').classList.remove('on');
+M('mSave').onclick=()=>{
+  const ch={type:editing?"Update":"Add",name:M('fName').value.trim(),npi:M('fNpi').value.trim(),spec:M('fSpec').value,loc:M('fLoc').value,acc:M('fAcc').value,ref:editing&&editing.id};
+  const v=showChecks(ch);
+  if(v.route==="Returned to provider"){toast("Fix the failed checks before saving");return}
+  changes.push(ch);
+  if(editing){Object.assign(editing,{name:ch.name,npi:ch.npi,spec:ch.spec,loc:ch.loc,acc:ch.acc,status:"Changed"})}
+  else roster.push({id:"r"+roster.length,name:ch.name,npi:ch.npi,spec:ch.spec,loc:ch.loc,acc:ch.acc,status:"Added"});
+  M('modal').classList.remove('on');renderRoster();toast(`Saved: ${v.conf}% confidence`);
+};
+window.removeDoc=id=>{const r=roster.find(x=>x.id===id);const ch={type:"Remove",name:r.name,npi:r.npi,spec:r.spec,loc:r.loc,acc:r.acc,ref:id};showChecks(ch);changes.push(ch);r.status="Removed";renderRoster();toast("Marked as left: an analyst will confirm")};
+M('submitBtn').onclick=()=>{
+  if(!changes.length){toast("No changes yet: edit, add or remove a doctor");return}
+  changes.splice(0).forEach(ch=>{const v=verify(ch);const q={...ch,conf:v.conf,route:v.route,practice:"Maple Grove Family Practice",at:now()};queue.unshift(q);L(`Priya (Maple Grove) submitted ${ch.type.toLowerCase()} for ${ch.name}: ${v.conf}% → ${v.route}`);if(v.route==="Auto-applied")L(`System loaded ${ch.name} to claims and directory (auto, ≥95%)`)});
+  renderRoster();renderPlan();toast("Submitted: open the Plan view");
+};
+// ---- plan view (seed with other practices) ----
+[["Update","Dr. Owen Lindqvist","Riverbend Medical Group",98,"Auto-applied"],["Add","Dr. Hana Okafor","Lakeshore Behavioral",97,"Auto-applied"],["Remove","Dr. Felix Dunmore","Cedar Ridge IPA",85,"Needs review"],["Update","Dr. Zara Everly","Pinecrest Family Care",75,"Needs review"],["Add","Dr. Victor Vance","Harborview Health",0,"Returned to provider"]].forEach(s=>queue.push({type:s[0],name:s[1],practice:s[2],conf:s[3],route:s[4],at:new Date(Date.now()-Math.random()*36e5*30)}));
+function renderPlan(){
+  const auto=queue.filter(q=>q.route==="Auto-applied").length, live=queue.filter(q=>q.route==="Auto-applied"||q.route==="Approved").length;
+  M('kpis').innerHTML=[["Changes live within 48 hrs",Math.round(100*live/queue.length)+"%","target 85%"],["Touchless (auto-applied)",Math.round(100*auto/queue.length)+"%","target 70%"],["Waiting for analyst",queue.filter(q=>q.route==="Needs review").length,"only real exceptions"],["Returned to provider",queue.filter(q=>q.route==="Returned to provider").length,"bad data stopped at entry"]].map(k=>`<div class="card k"><div class="l">${k[0]}</div><div class="v">${k[1]}</div><div class="d">${k[2]}</div></div>`).join("");
+  M('queue').innerHTML=queue.map((q,i)=>`<tr><td><b>${q.type}</b>: ${q.name}</td><td>${q.practice}</td><td><span class="pill ${q.conf>=95?"ok":q.conf>=70?"warn":"bad"}">${q.conf}%</span></td><td><span class="pill ${q.route==="Auto-applied"||q.route==="Approved"?"ok":q.route==="Needs review"?"warn":q.route==="Rejected"?"mute":"bad"}">${q.route}</span></td><td>${q.route==="Needs review"?`<div class="row"><button class="btn p" onclick="decide(${i},'Approved')">Approve</button><button class="btn r" onclick="decide(${i},'Rejected')">Reject</button></div>`:"—"}</td></tr>`).join("");
+}
+window.decide=(i,d)=>{const q=queue[i];q.route=d;L(`Analyst ${d.toLowerCase()} ${q.type.toLowerCase()} for ${q.name} (${q.practice})`);renderPlan();toast(d)};
+function renderLog(){M('log').innerHTML=log.length?log.map(l=>`<div><time>${l.t.toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})}</time>${l.m}</div>`).join(""):'<div class="empty">No activity yet</div>'}
+document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#nav button').forEach(x=>x.classList.toggle('on',x===b));document.querySelectorAll('.view').forEach(v=>v.classList.toggle('on',v.id==="v-"+b.dataset.v));});
+L("Seeded: 5 changes from other practices (synthetic)");
+renderRoster();renderPlan();
+</script>
 </body>
 </html>
