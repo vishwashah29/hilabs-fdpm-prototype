@@ -41,14 +41,27 @@ footer{text-align:center;color:var(--slate);font-size:12px;padding:18px}
 </head>
 <body>
 <header><div class="logo">Roster<span>Link</span></div><div class="sub">Concept for MedCare: verified roster updates from providers to plans</div><div class="sp"></div><span class="syn">Synthetic data only</span></header>
-<nav id="nav"><button data-v="provider" class="on">1 · Provider view</button><button data-v="plan">2 · Plan view</button><button data-v="how">3 · How checks work</button></nav>
+<nav id="nav"><button data-v="sources" class="on">1 · Sources</button><button data-v="inbox">2 · Priya's inbox</button><button data-v="provider">3 · What the plan holds</button><button data-v="plan">4 · Plan view</button><button data-v="how">How checks work</button></nav>
 <main>
-<section class="view on" id="v-provider">
+<section class="view on" id="v-sources">
+  <div class="walk"><b>Verify first, ask only the gaps.</b> RosterLink takes data from any source the plan already has, matches each doctor across them and checks it. Only what no source can confirm becomes a question for the practice.</div>
+  <div class="grid kpis" id="srcCards"></div>
+  <div class="card"><div class="row sb"><div><h2>Verification run for Maple Grove Family Practice</h2><p class="s">7 doctors on file at Summit Health Plan, checked against every source overnight.</p></div><button class="btn b" id="runBtn">Run verification</button></div>
+  <table><thead><tr><th>Doctor</th><th>Sources that agree</th><th>Result</th></tr></thead><tbody id="runBody"><tr><td colspan="3" class="empty">Click Run verification</td></tr></tbody></table></div>
+</section>
+<section class="view" id="v-inbox">
+  <div class="walk"><b>Priya gets a plan-branded link</b> (confirmed contact, one-time code, no login). Instead of a 20-row roster, she answers only what machines could not confirm, reports any joins or leavers, and signs off the rest.</div>
+  <div class="grid two"><div class="card"><h2>We ask: 3 questions</h2><p class="s">Each question shows the evidence behind it.</p><div id="qs"></div></div>
+  <div class="card"><h2>You tell</h2><p class="s">Report a doctor who joined or left. Entering an NPI pre-fills the record.</p><button class="btn" onclick="openModal('Add doctor',null)">+ Report a new doctor</button>
+  <h2 style="margin-top:22px">Sign off</h2><p class="s">Confirms everything else on your roster for the 90-day check.</p><label style="font-size:13px"><input type="checkbox" id="signChk"> I confirm the rest of my roster is correct. (Priya Shah, Practice Manager)</label><div style="margin-top:10px"><button class="btn b" id="signBtn">Sign off and send</button></div>
+  <div id="receipt"></div></div></div>
+</section>
+<section class="view" id="v-provider">
   <div class="walk"><b>You are Priya, practice manager at Maple Grove Family Practice.</b> Your roster arrives pre-filled with what the plan holds today. Confirm what's right, fix what's wrong, add or remove doctors. Every change is checked instantly before it goes anywhere.
     <ol><li>Click <b>Edit</b> on a flagged row, or <b>+ Add doctor</b> (try NPI 1932047581 for a clean add, or change a digit to see a failed check).</li><li>See the checks and confidence score update live on the right.</li><li>Click <b>Submit changes</b>, then open the <b>Plan view</b>.</li></ol></div>
   <div class="grid two">
     <div class="card">
-      <div class="row sb"><div><h2>Your roster at Summit Health Plan</h2><p class="s">Pre-filled from the plan's records and MedCare's data. Rows marked ⚠ disagree with outside sources.</p></div>
+      <div class="row sb"><div><h2>What Summit Health Plan holds about you</h2><p class="s">Pre-filled from the plan's records and MedCare's data. Rows marked ⚠ disagree with outside sources.</p></div>
         <div class="row"><button class="btn" id="addBtn">+ Add doctor</button><button class="btn b" id="submitBtn">Submit changes (0)</button></div></div>
       <table><thead><tr><th>Doctor</th><th>NPI</th><th>Specialty</th><th>Location</th><th>Status</th><th></th></tr></thead><tbody id="roster"></tbody></table>
     </div>
@@ -178,6 +191,23 @@ function renderPlan(){
 window.decide=(i,d)=>{const q=queue[i];q.route=d;L(`Analyst ${d.toLowerCase()} ${q.type.toLowerCase()} for ${q.name} (${q.practice})`);renderPlan();toast(d)};
 function renderLog(){M('log').innerHTML=log.length?log.map(l=>`<div><time>${l.t.toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})}</time>${l.m}</div>`).join(""):'<div class="empty">No activity yet</div>'}
 document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#nav button').forEach(x=>x.classList.toggle('on',x===b));document.querySelectorAll('.view').forEach(v=>v.classList.toggle('on',v.id==="v-"+b.dataset.v));});
+
+const SRC=[["Plan roster (Excel, SFTP)","Last file 12 days ago","7 doctors"],["Group feed (API)","Not used by this practice","0"],["CAQH (via plan's contract)","Attested 41 days ago","7 doctors"],["Public registries","NPPES, licence board, OIG","7 checked"],["Plan claims (plan-only)","Last 12 months","6 doctors billing"]];
+M('srcCards').innerHTML=SRC.map(x=>`<div class="card k"><div class="l">${x[0]}</div><div class="v" style="font-size:18px">${x[2]}</div><div class="d" style="color:var(--slate)">${x[1]}</div></div>`).join("");
+const RUN=[["Dr. Asha Northcott","Roster, CAQH, NPPES, licence, claims","Verified"],["Dr. Marcus Alder","Roster, CAQH, NPPES, licence, claims","Verified"],["Dr. Elena Pemberton","Roster says Harbor Blvd; claims and CAQH say Maple Ave","Ask"],["Dr. Ravi Whitlock","Listed, but no claims in 12 months","Ask"],["Dr. Grace Holloway","Licence board shows inactive","Ask"],["Dr. Tomas Ingram","Roster, CAQH, NPPES, licence, claims","Verified"],["Dr. Nadia Kettering","Roster, CAQH, NPPES, licence, claims","Verified"]];
+M('runBtn').onclick=()=>{M('runBody').innerHTML=RUN.map(r=>`<tr><td><b>${r[0]}</b></td><td>${r[1]}</td><td><span class="pill ${r[2]==="Verified"?"ok":"warn"}">${r[2]==="Verified"?"Verified, no question":"Ask the practice"}</span></td></tr>`).join("")+`<tr><td colspan="3"><b>Result:</b> 4 of 7 verified with no human. 3 questions go to Priya instead of a 7-row roster.</td></tr>`;L("Verification run: 4 of 7 verified automatically, 3 questions queued for Maple Grove");toast("3 questions sent to Priya's inbox")};
+const QS=[{who:"Dr. Elena Pemberton",q:"Which address is right?",ev:"Plan lists 48 Harbor Blvd. Claims (last 90 days) and CAQH show 120 Maple Ave.",opts:["120 Maple Ave (claims are right)","48 Harbor Blvd (plan is right)"]},{who:"Dr. Ravi Whitlock",q:"Is Dr. Whitlock still seeing patients here?",ev:"Listed as accepting new patients, but no claims at this location in 12 months.",opts:["Yes, still here","No, left the practice"]},{who:"Dr. Grace Holloway",q:"Is Dr. Holloway's licence current?",ev:"State licence board shows inactive since 3 Sept.",opts:["Renewed: I'll upload proof","She no longer practises here"]}];
+const ANS={};
+function renderQs(){M('qs').innerHTML=QS.map((q,i)=>`<div style="border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:10px;${ANS[i]!=null?"background:var(--wash)":""}"><b>${q.who}</b>: ${q.q}<div style="color:var(--slate);font-size:12px;margin:4px 0 8px">Evidence: ${q.ev}</div><div class="row">${q.opts.map((o,k)=>`<button class="btn ${ANS[i]===k?"p":""}" onclick="answer(${i},${k})">${o}</button>`).join("")}</div></div>`).join("")}
+window.answer=(i,k)=>{ANS[i]=k;renderQs();const q=QS[i];const ch={type:i===1&&k===1?"Remove":"Update",name:q.who,npi:roster[[2,3,4][i]].npi,spec:roster[[2,3,4][i]].spec,loc:i===0&&k===0?LOCS[0]:roster[[2,3,4][i]].loc,acc:"Yes"};
+ let v=verify(ch);if(i===0&&k===0)v={conf:98,route:"Auto-applied"};if(i===2&&k===0)v={conf:80,route:"Needs review"};if(i===1&&k===0)v={conf:82,route:"Needs review"};
+ queue.unshift({...ch,conf:v.conf,route:v.route,practice:"Maple Grove Family Practice",at:now()});L(`Priya answered "${q.opts[k]}" for ${q.who}: ${v.conf}% → ${v.route}`);if(i===0&&k===0){roster[2].loc=LOCS[0];roster[2].flag=null;renderRoster()}renderPlan();toast("Answer recorded")};
+M('signBtn').onclick=()=>{if(Object.keys(ANS).length<3){toast("Answer the 3 questions first");return}if(!M('signChk').checked){toast("Tick the sign-off box");return}
+ L("Priya Shah signed off the remaining 4 records for the 90-day verification");
+ const rows=QS.map((q,i)=>{const qq=queue.find(x=>x.name===q.who);return `<tr><td>${q.who}</td><td>${q.opts[ANS[i]]}</td><td><span class="pill ${qq.route==="Auto-applied"?"ok":"warn"}">${qq.route==="Auto-applied"?"Live in plan systems":"Analyst reviewing"}</span></td></tr>`}).join("");
+ M('receipt').innerHTML=`<div style="margin-top:16px;border:1.5px solid var(--navy);border-radius:10px;padding:12px"><b>Receipt</b> · ${now().toLocaleString()}<table style="margin-top:8px">${rows}<tr><td>4 other doctors</td><td>Signed off</td><td><span class="pill ok">Verified for 90 days</span></td></tr></table><p class="s" style="margin-top:8px">Time taken: about 2 minutes. No follow-up call needed.</p></div>`;toast("Signed off: receipt sent")};
+renderQs();
+
 L("Seeded: 5 changes from other practices (synthetic)");
 renderRoster();renderPlan();
 </script>
